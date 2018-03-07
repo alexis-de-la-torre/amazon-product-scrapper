@@ -1,0 +1,9 @@
+{
+  "name": "amazon-etl",
+  "version": "0.0.0",
+  "description": "Get products info from Amazon and save them to Postgres",
+  "main": "index.js",
+  "repository": "https://github.com/Alexis-De-La-Torre/amazon-etl.git",
+  "author": "Alexis De La Torre <contacto@alexisdelatorre.com>",
+  "license": "MIT"
+}
