@@ -10,6 +10,8 @@
     "axios": "^0.18.0",
     "fluture": "^8.0.2",
     "piranhax": "^1.0.9",
-    "ramda": "^0.25.0"
+    "prettyjson": "^1.2.1",
+    "ramda": "^0.25.0",
+    "rss-parser": "^3.1.2"
   }
 }

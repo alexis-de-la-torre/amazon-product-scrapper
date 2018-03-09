@@ -1,14 +1,49 @@
-const { encaseP } = require('fluture')
+const { encaseP, parallel } = require('fluture')
 const { get } = require('axios')
 const R = require('ramda')
+const { render } = require('prettyjson')
+
+const host = 'https://www.amazon.com'
+
+const infoTable = R.pipe(
+  html => html.match(/<table id="productDetails_detailBullets_sections1" .*?>.*?<\/table>/gs),
+  R.prop(0),
+  R.replace(/<table id="productDetails_detailBullets_sections1" .*?>|(<\/table>)+$/g, ''),
+  R.trim,
+  html => html.match(/<tr>.*?<\/tr>/gs),
+  R.map(R.replace(/<tr>|<\/tr>/g, '')),
+  R.map(R.trim),
+  R.map(R.replace(/<th.*?>|<td.*?>|<\/td>/g, '')),
+  R.map(R.split('</th>')),
+  R.map(R.map(R.trim)),
+  R.fromPairs,
+  R.evolve({ 'Shipping Weight': x => x.replace(/\(.*?\)/, '').trim() }),
+  R.dissoc('Customer Reviews'),
+  R.dissoc('Best Sellers Rank'),
+)
+
+const infoStandard = R.pipe(
+  html => html.match(/<div id="detail-bullets_feature_div">(.*?<\/div>){2}/gs),
+  R.prop(0),
+  html => html.match(/<div class="content">.*?<\/div>/gs),
+  R.prop(0),
+  html => html.match(/<li>.*?<\/li>/gs),
+  R.map(R.replace(/<li>|<\/li>|<b>/g, '')),
+  R.map(R.trim),
+  R.map(R.split('</b>')),
+  R.map(R.map(R.trim)),
+  R.map(R.map(R.replace(':', ''))),
+  R.fromPairs,
+  R.evolve({ 'Shipping Weight': x => x.replace(/\(.*?\)/, '').trim() }),
+  R.dissoc('Average Customer Review'),
+)
 
 const parsers = [
   // seller
-  R.pipe(
-    html => html.match(/<a id="bylineInfo" (.*?)>(.*?)<\/a>/gs),
-    R.prop(0),
-    R.replace(/<a id="bylineInfo" (.*?)>|<\/a>/g, ''),
-  ),
+  html =>
+  html.match(/<a id=("bylineInfo"|"brand") .*?>.*?<\/a>/gs)[0]
+  .replace(/<a .*?>|<\/a>/g, '')
+  .trim(),
   // title
   R.pipe(
     html => html.match(/<span id="productTitle" (.*?)>(.*?)<\/span>/gs),
@@ -28,8 +63,8 @@ const parsers = [
   R.pipe(
     html => html.match(/<div id="feature-bullets" .*?>(.*?<\/div>){5}/gs),
     R.prop(0),
-    html => html.match(/<li>.*?<\/li>/gs),
-    R.map(R.replace(/<li><span .*>|<\/span><\/li>/g, '')),
+    html => html.match(/<li.*?>.*?<\/li>/gs),
+    R.map(R.replace(/<li.*?><span .*>|<\/span><\/li>/g, '')),
     R.map(R.trim)
   ),
   // description
@@ -40,22 +75,10 @@ const parsers = [
     R.trim
   ),
   // information
-  R.pipe(
-    html => html.match(/<table id="productDetails_detailBullets_sections1" .*?>.*?<\/table>/gs),
-    R.prop(0),
-    R.replace(/<table id="productDetails_detailBullets_sections1" .*?>|(<\/table>)+$/g, ''),
-    R.trim,
-    html => html.match(/<tr>.*?<\/tr>/gs),
-    R.map(R.replace(/<tr>|<\/tr>/g, '')),
-    R.map(R.trim),
-    R.map(R.replace(/<th.*?>|<td.*?>|<\/td>/g, '')),
-    R.map(R.split('</th>')),
-    R.map(R.map(R.trim)),
-    R.fromPairs,
-    R.dissoc('Customer Reviews'),
-    R.dissoc('Best Sellers Rank'),
-    R.evolve({ 'Shipping Weight': x => x.replace(/\(.*?\)/, '').trim() })
-  ),
+  html => {
+    if (html.includes('<div class="content">')) return infoStandard(html)
+    else return infoTable(html)
+  },
 ]
 
 const keys = [ 'seller', 'title', 'price', 'characteristics', 'description', 'information' ]
@@ -63,12 +86,24 @@ const keys = [ 'seller', 'title', 'price', 'characteristics', 'description', 'in
 const parseProduct = R.pipe(
   html => parsers.map(R.applyTo(html)),
   R.zipObj(keys),
-  // R.prop('information')
+  R.dissoc('description')
 )
 
-const link = 'https://www.amazon.com/L-O-L-Surprise-551508-Pearl/dp/B078W1HYH8?pd_rd_wg=HwW6f&pd_rd_r=be31c96b-80de-429a-9ac4-ee1ebccc6017&pd_rd_w=oaws0&ref_=pd_gw_ri&pf_rd_r=7HT1WQB31M4EE1CHNJ75&pf_rd_p=c116cecb-5676-58e0-b306-0894a1d0149e'
+const links = [
+  'https://www.amazon.com/Optimum-Nutrition-Standard-Protein-Chocolate/dp/B000QSNYGI/ref=sr_1_3_a_it?ie=UTF8&qid=1520549221&sr=8-3&keywords=protein%2Bpowder&th=1',
+  'https://www.amazon.com/Bluetooth-Cayuo-Wireless-Headphones-Earpieces/dp/B079K48DNT/ref=zg_bs_musical-instruments_4?_encoding=UTF8&psc=1&refRID=A0RNVS0B0MRKQ9Q0Q405'
+]
 
-encaseP(get, link)
-  .map(R.prop('data'))
-  .map(parseProduct)
+parallel(2, links.map(encaseP(get)))
+  .map(R.map(R.prop('data')))
+  .map(R.map(parseProduct))
+  // .map(R.path([ 0, 'information' ]))
+  .map(render)
   .fork(console.log, console.log)
+
+// const link = 'https://www.amazon.com/gp/rss/bestsellers/movies-tv/ref=zg_bs_movies-tv_rsslink'
+//
+// encaseP(get, link)
+//   .map(R.prop('data'))
+//   .chain(encaseP(rss))
+//   .fork(console.log, console.log)
