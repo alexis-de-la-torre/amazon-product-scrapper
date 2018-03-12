@@ -2,6 +2,7 @@ const { encaseP2, parallel, Future } = require('fluture')
 const { get } = require('axios')
 const R = require('ramda')
 const { fromString: htmlToText } = require('html-to-text')
+const { parse: html } = require('fast-html-parser')
 
 const host = 'https://www.amazon.com'
 
@@ -9,21 +10,25 @@ const headers = {
   'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0'
 }
 
+const informationList = R.pipe(
+  html => html.match(/<li>.*?<\/li>/gs),
+  R.map(R.replace(/<li>|<\/li>|<b>/g, '')),
+  R.map(R.trim),
+  R.map(R.split('</b>')),
+  R.map(R.map(R.trim)),
+  R.map(R.map(R.replace(':', ''))),
+  R.fromPairs,
+  R.evolve({ 'Shipping Weight': x => x.replace(/\(.*?\)/, '').trim() }),
+  R.dissoc('Average Customer Review'),
+)
+
 const information = [
   R.pipe(
     html => html.match(/<div id="detail-bullets_feature_div">(.*?<\/div>){2}/gs),
     R.prop(0),
     html => html.match(/<div class="content">.*?<\/div>/gs),
     R.prop(0),
-    html => html.match(/<li>.*?<\/li>/gs),
-    R.map(R.replace(/<li>|<\/li>|<b>/g, '')),
-    R.map(R.trim),
-    R.map(R.split('</b>')),
-    R.map(R.map(R.trim)),
-    R.map(R.map(R.replace(':', ''))),
-    R.fromPairs,
-    R.evolve({ 'Shipping Weight': x => x.replace(/\(.*?\)/, '').trim() }),
-    R.dissoc('Average Customer Review'),
+    informationList,
     Future.of,
   ),
   R.pipe(
@@ -43,6 +48,13 @@ const information = [
     R.dissoc('Best Sellers Rank'),
     Future.of,
   ),
+  // B00RBQ0G2I
+  R.pipe(
+    html => html.match(/<div id="detail-bullets">.*?<table .*?>.*?<\/table>/gs),
+    R.prop(0),
+    informationList,
+    Future.of,
+  )
 ]
 
 const price = [
@@ -67,6 +79,28 @@ const price = [
     R.map(R.replace(/<span class="a-size-large a-color-price olpOfferPrice a-text-bold">|<\/span>/g, '')),
     R.map(R.trim),
   )
+]
+
+const description = [
+  R.pipe(
+    html => html.match(/<div id="productDescription" .*?>(.*?<\/div>){2}/gs),
+    R.prop(0),
+    R.replace(/<div id="productDescription" .*?>|(<\/div>)+$/g, ''),
+    R.replace(/<div class="disclaim">.*?<\/div>/gs, ''),
+    R.replace(/<!-- .*? -->/gs, ''),
+    R.replace(/<style type="text\/css">.*?<\/style>/gs, ''),
+    R.replace(/<script type="text\/javascript">.*?<\/script>/gs, ''),
+    R.replace(/<\/div>/g, ''),
+    htmlToText,
+    R.trim,
+    Future.of,
+  ),
+  // R.pipe(
+  //   html,
+  //   node => node.querySelector('#aplus3p_feature_div').text,
+  //   R.replace(/\n{2,}/g, ''),
+  //   Future.of,
+  // )
 ]
 
 const parsers = [
@@ -101,22 +135,15 @@ const parsers = [
     Future.of,
   ),
   // description
-  R.pipe(
-    html => html.match(/<div id="productDescription" .*?>(.*?<\/div>){2}/gs),
-    R.prop(0),
-    R.replace(/<div id="productDescription" .*?>|(<\/div>)+$/g, ''),
-    R.replace(/<div class="disclaim">.*?<\/div>/gs, ''),
-    R.replace(/<!-- .*? -->/gs, ''),
-    R.replace(/<style type="text\/css">.*?<\/style>/gs, ''),
-    R.replace(/<script type="text\/javascript">.*?<\/script>/gs, ''),
-    R.replace(/<\/div>/g, ''),
-    htmlToText,
-    R.trim,
-    Future.of,
-  ),
+  html => {
+    if (html.includes('id="productDescription"')) return description[0](html)
+    else if (html.includes('class="feature"')) return Future.of('< feature >')
+    else return Future.of('< not found >')
+  },
   // information
   html => {
-    if (html.includes('productDetails_detailBullets_sections1')) return information[1](html)
+    if (html.includes('detail-bullets')) return information[2](html)
+    else if (html.includes('detailBullets_sections1')) return information[1](html)
     else return information[0](html)
   },
 ]
@@ -131,6 +158,7 @@ const parseProduct = R.pipe(
   R.map(html => parsers.map(R.applyTo(html))),
   R.chain(parallel(6)),
   R.map(R.zipObj(keys)),
+  // R.map(R.prop('information')),
 )
 
 module.exports = parseProduct

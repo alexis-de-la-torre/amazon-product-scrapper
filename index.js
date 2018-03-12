@@ -13,6 +13,7 @@ const dev = process.env.NODE_ENV !== 'production'
 
 const data =
   categories
+  .map(R.reject(R.propEq('name', 'Magazine Subscriptions')))
   .map(x => dev ? sample(x) : x)
   .map(R.map(({ name, link }) => category(link).map(products => ({ name, products }))))
   .map(R.map(R.map(({ name, products }) => products.map(asin => ({ name, asin })))))
@@ -25,13 +26,14 @@ const program = name => R.pipe(
   R.chain(product),
 )
 
-// program('Home & Kitchen')('B014WOWNAY').fork(console.log, console.log)
+// program('')('B0037STB02').fork(console.log, console.log)
 
 const init = () =>
   data
-  .map(x => dev ? sample(x, 2) : x)
+  .map(x => dev ? sample(x) : x)
   .map(R.map(({ name, asin }) => program(name)(asin)))
   .chain(parallel(1))
+  .map(render)
   .fork(console.log, console.log)
 
 init()
