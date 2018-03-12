@@ -1,10 +1,14 @@
-const { encaseP, parallel, Future } = require('fluture')
+const { encaseP2, parallel, Future } = require('fluture')
 const { get } = require('axios')
 const R = require('ramda')
 const { render } = require('prettyjson')
 const { fromString: htmlToText } = require('html-to-text')
 
 const host = 'https://www.amazon.com'
+
+const headers = {
+  'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0'
+}
 
 const information = [
   R.pipe(
@@ -56,7 +60,7 @@ const price = [
     R.prop(0),
     R.replace(/Available from <a href='|'>/g, ''),
     R.concat('https://www.amazon.com'),
-    encaseP(get),
+    link => encaseP2(get, link, { headers }),
     R.map(R.prop('data')),
     R.map(html => html.match(/<span class="a-size-large a-color-price olpOfferPrice a-text-bold">.*?<\/span>/gs)),
     // Here i could get more info on the price (seller, shipping, etc)
@@ -121,23 +125,35 @@ const parsers = [
 const keys = [ 'seller', 'title', 'price', 'characteristics', 'description', 'information' ]
 
 const parseProduct = R.pipe(
-  html => parsers.map(R.applyTo(html)),
-  parallel(6),
+  Future.of,
+  R.map(asin => `https://www.amazon.com/dp/${asin}`),
+  R.chain(link => encaseP2(get, link, { headers })),
+  R.map(R.prop('data')),
+  R.map(html => parsers.map(R.applyTo(html))),
+  R.chain(parallel(6)),
   R.map(R.zipObj(keys)),
 )
 
-const links = [
-  'https://www.amazon.com/L-O-L-Surprise-551508-Pearl/dp/B078W1HYH8/ref=zg_bs_toys-and-games_14?_encoding=UTF8&psc=1&refRID=DK20YSPG5DK7MW297480',
-  'https://www.amazon.com/Optimum-Nutrition-Standard-Protein-Chocolate/dp/B000QSNYGI/ref=sr_1_3_a_it?ie=UTF8&qid=1520549221&sr=8-3&keywords=protein%2Bpowder&th=1',
-  'https://www.amazon.com/Bluetooth-Cayuo-Wireless-Headphones-Earpieces/dp/B079K48DNT/ref=zg_bs_musical-instruments_4?_encoding=UTF8&psc=1&refRID=A0RNVS0B0MRKQ9Q0Q405',
-  'https://www.amazon.com/Polaroid-Premium-Photo-QUINTUPLE-Sheets/dp/B008GVVUFE/ref=zg_bs_photo_6?_encoding=UTF8&psc=1&refRID=AVEPRT4RN1YK84RSQDBG',
-]
+// const links = Future.of([
+//   'https://www.amazon.com/L-O-L-Surprise-551508-Pearl/dp/B078W1HYH8/ref=zg_bs_toys-and-games_14?_encoding=UTF8&psc=1&refRID=DK20YSPG5DK7MW297480',
+//   // 'https://www.amazon.com/Optimum-Nutrition-Standard-Protein-Chocolate/dp/B000QSNYGI/ref=sr_1_3_a_it?ie=UTF8&qid=1520549221&sr=8-3&keywords=protein%2Bpowder&th=1',
+//   // 'https://www.amazon.com/Bluetooth-Cayuo-Wireless-Headphones-Earpieces/dp/B079K48DNT/ref=zg_bs_musical-instruments_4?_encoding=UTF8&psc=1&refRID=A0RNVS0B0MRKQ9Q0Q405',
+//   // 'https://www.amazon.com/Polaroid-Premium-Photo-QUINTUPLE-Sheets/dp/B008GVVUFE/ref=zg_bs_photo_6?_encoding=UTF8&psc=1&refRID=AVEPRT4RN1YK84RSQDBG',
+// ])
 
-parallel(2, links.map(encaseP(get)))
-  .map(R.map(R.prop('data')))
-  .map(R.map(parseProduct))
-  .chain(parallel(1))
-  // .map(R.path([ 0, 'information' ]))
-  // .map(R.pluck('description'))
-  .map(render)
-  .fork(console.log, console.log)
+const ids = Future.of([
+   'B078W1HYH8',
+   'B000QSNYGI',
+   'B079K48DNT',
+   'B008GVVUFE'
+])
+
+ids.map(R.map(parseProduct)).chain(parallel(1)).fork(console.log, console.log)
+
+// parallel(1, ids.map(encaseP(get)))
+//   .map(R.map(parseProduct))
+//   .chain(parallel(1))
+//   // .map(R.path([ 0, 'information' ]))
+//   .map(R.pluck('information'))
+//   .map(render)
+//   .fork(console.log, console.log)
