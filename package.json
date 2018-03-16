@@ -8,6 +8,8 @@
   "license": "MIT",
   "dependencies": {
     "axios": "^0.18.0",
+    "closing-tag": "https://github.com/Alexis-De-La-Torre/closing-tag.git",
+    "crocks": "^0.9.0",
     "fast-html-parser": "^1.0.1",
     "fluture": "^8.0.2",
     "html-to-text": "^4.0.0",

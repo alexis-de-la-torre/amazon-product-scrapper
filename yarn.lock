@@ -64,6 +64,10 @@ caseless@~0.12.0:
   version "0.12.0"
   resolved "https://registry.yarnpkg.com/caseless/-/caseless-0.12.0.tgz#1b681c21ff84033c826543090689420d187151dc"
 
+"closing-tag@https://github.com/Alexis-De-La-Torre/closing-tag.git":
+  version "0.0.1"
+  resolved "https://github.com/Alexis-De-La-Torre/closing-tag.git#16e8dc72867912525c2fdd961f539c967ff0324d"
+
 co@^4.6.0:
   version "4.6.0"
   resolved "https://registry.yarnpkg.com/co/-/co-4.6.0.tgz#6ea6bdf3d853ae54ccb8e47bfa0bf3f9031fb184"
@@ -88,6 +92,10 @@ concurrify@^1.0.0:
 core-util-is@1.0.2, core-util-is@~1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.2.tgz#b5fd54220aa2bc5ab57aab7140c940754503c1a7"
+
+crocks@^0.9.0:
+  version "0.9.0"
+  resolved "https://registry.yarnpkg.com/crocks/-/crocks-0.9.0.tgz#dff48c1f3e9effda0c0f479f7da2ddb3a0af151e"
 
 cryptiles@3.x.x:
   version "3.1.2"

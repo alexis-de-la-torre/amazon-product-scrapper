@@ -7,6 +7,7 @@ const sample = require('lodash.samplesize')
 const { readFile } = require('fs')
 
 const product = require('./product')
+const offers = require('./offers')
 const category = require('./category')
 
 const dev = process.env.NODE_ENV !== 'production'
@@ -25,16 +26,17 @@ const data =
 const program = name => R.pipe(
   Future.of,
   R.map(R.tap(asin => console.log(`${name} :: ${asin}`))),
-  R.chain(product),
+  R.chain(asin => parallel(1, [ product(asin), offers(asin) ])),
+  R.map(([ product, offers ]) => ({ ...product, offers })),
 )
-
-// program('')('B0037STB02').fork(console.log, console.log)
 
 const init = () =>
   data
+  // .map(R.filter(R.propEq('asin', 'B000BD0RT0')))
   .map(x => dev ? sample(x) : x)
   .map(R.map(({ name, asin }) => program(name)(asin)))
   .chain(parallel(1))
+  .map(R.prop(0))
   .map(render)
   .fork(console.log, console.log)
 
