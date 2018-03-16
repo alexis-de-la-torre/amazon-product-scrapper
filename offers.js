@@ -1,3 +1,5 @@
+// there are more pages for every product but the first 10 are enought for now
+
 const R = require('ramda')
 const { Future, encaseP2 } = require('fluture')
 const { get } = require('axios')
@@ -41,9 +43,6 @@ const condition = R.pipe(
   R.replace(/<span class="a-size-medium olpCondition a-text-bold">|<\/span>/g, ''),
   R.trim,
 )
-
-
-// there are more pages for every product but the first 10 are enought for now
 
 const offers = R.pipe(
   asin => encaseP2(get, link(asin), { headers }),

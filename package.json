@@ -1,7 +1,7 @@
 {
-  "name": "amazon-etl",
-  "version": "0.0.0",
-  "description": "Get products info from Amazon and save them to Postgres",
+  "name": "amazon-product-scrapper",
+  "version": "0.0.1",
+  "description": "Scrappes product info and offers from an amazon asin",
   "main": "index.js",
   "repository": "https://github.com/Alexis-De-La-Torre/amazon-etl.git",
   "author": "Alexis De La Torre <contacto@alexisdelatorre.com>",
