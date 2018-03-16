@@ -17,14 +17,15 @@ const data =
   .map(R.split('\n\n'))
   .map(R.map(R.split('\n')))
   .map(R.map(R.zipObj([ 'name', 'link' ])))
-  .map(x => dev ? sample(x) : x)
+  // .map(x => dev ? sample(x) : x)
   .map(R.map(({ name, link }) => category(link).map(products => ({ name, products }))))
   .map(R.map(R.map(({ name, products }) => products.map(asin => ({ name, asin })))))
   .chain(parallel(1))
   .map(R.flatten)
+  .map(R.tap(x => console.log(x.length)))
 
 const program = name => R.pipe(
-  Future.of,
+  Future.after(5000),
   R.map(R.tap(asin => console.log(`${name} :: ${asin}`))),
   R.chain(asin => parallel(1, [ product(asin), offers(asin) ])),
   R.map(([ product, offers ]) => ({ ...product, offers })),
