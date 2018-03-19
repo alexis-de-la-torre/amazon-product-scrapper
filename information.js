@@ -55,6 +55,17 @@ const information = [
   )
 ]
 
+// data-a-dynamic-image='{"https://images-na.ssl-images-amazon.com/images/I/61eadgHe5YL._SY450_.jpg":[450,369],"https://images-na.ssl-images-amazon.com/images/I/61eadgHe5YL._SY355_.jpg":[355,291],"https://images-na.ssl-images-amazon.com/images/I/61eadgHe5YL.jpg":[500,410]}'
+
+const image = [
+  // B06XG7S83W
+  R.pipe(
+    dom => dom('#landingImage').data('a-dynamic-image'),
+    R.keys,
+    R.last,
+  )
+]
+
 const router = html => {
   const dom = getDom(html)
 
@@ -62,21 +73,25 @@ const router = html => {
     title:
       html.includes('id="productTitle"')
       ? title[0](dom)
-      : Future.of('<not found>'),
+      : '<not found>',
     features:
       html.includes('id="feature-bullets"')
       ? features[0](dom)
-      : Future.of('<not found>'),
+      :'<not found>',
     description:
       html.includes('id="productDescription"')
       ? description[0](dom)
       : html.includes('class="feature"')
-      ? Future.of('<feature>')
-      : Future.of('<not found>'),
+      ? '<feature>'
+      : '<not found>',
     information:
       html.includes('id="productDetails_detailBullets_sections1"')
       ? information[0](dom)
-      : Future.of('<not found>')
+      : '<not found>',
+    image:
+      html.includes()
+      ? image[0](dom)
+      : '<not found>'
   })
 }
 
@@ -84,5 +99,6 @@ const getProduct = asin =>
   encaseP(get, link(asin))
   .map(R.prop('data'))
   .map(router)
+  .map(R.assoc('link', link(asin)))
 
 module.exports = getProduct
