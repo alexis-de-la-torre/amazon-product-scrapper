@@ -27,6 +27,8 @@ const getSeller = R.pipe(
   html =>
   html.includes('<img alt="Amazon.com"')
   ? 'Amazon'
+  : html.includes('<img alt="Amazon Warehouse Deals"')
+  ? 'Amazon Warehouse'
   : html.match(/<a .*?>.*?<\/a>/g)[0].replace(/<a .*?>|<\/a>/g, '').trim(),
 )
 

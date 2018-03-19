@@ -62,6 +62,8 @@ const cleanInformation = R.pipe(
   R.dissoc('Domestic Shipping'),
   R.dissoc('Date first available at Amazon.com'),
   R.dissoc('&#xA0;'),
+  R.dissoc('Shipping Advisory'),
+  R.dissoc('Shipping Information'),
   R.evolve({ 'Shipping Weight': x => x.replace(/\(.*?\)/, '').trim() }),
 )
 
