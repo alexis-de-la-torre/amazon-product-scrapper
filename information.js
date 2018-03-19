@@ -33,8 +33,26 @@ const description = [
     R.replace(/<\/div>/g, ''),
     getText,
     R.trim,
+  ),
+  // B06ZYWGCZG
+  R.pipe(
+    dom => dom('#aplus p').toArray().map($),
+    R.map(dom => dom.html()),
+    R.join('\n\n'),
+    getText,
   )
 ]
+
+const cleanInformation = R.pipe(
+  R.dissoc('Average Customer Review'),
+  R.dissoc('Best Sellers Rank'),
+  R.dissoc('Customer Reviews'),
+  R.dissoc('International Shipping'),
+  R.dissoc('Domestic Shipping'),
+  R.dissoc('Date first available at Amazon.com'),
+  R.dissoc('&#xA0;'),
+  R.evolve({ 'Shipping Weight': x => x.replace(/\(.*?\)/, '').trim() }),
+)
 
 const information = [
   // B06XG7S83W
@@ -46,12 +64,17 @@ const information = [
     R.map(R.split('</th>')),
     R.map(R.map(R.trim)),
     R.fromPairs,
-    R.evolve({ 'Shipping Weight': x => x.replace(/\(.*?\)/, '').trim() }),
-    R.dissoc('Average Customer Review'),
-    R.dissoc('Best Sellers Rank'),
-    R.dissoc('Customer Reviews'),
-    R.dissoc('International Shipping'),
-    R.dissoc('Domestic Shipping'),
+    cleanInformation,
+  ),
+  // B01COH2R98
+  R.pipe(
+    dom => dom('#prodDetails table > tbody > tr').toArray().map($),
+    R.map(dom => dom.html()),
+    R.map(R.replace(/<td .*?>|<\/td>$/g, '')),
+    R.map(R.split('</td>')),
+    R.map(R.map(R.trim)),
+    R.fromPairs,
+    cleanInformation,
   )
 ]
 
@@ -73,25 +96,27 @@ const router = html => {
     title:
       html.includes('id="productTitle"')
       ? title[0](dom)
-      : '<not found>',
+      : '<!not found>',
     features:
       html.includes('id="feature-bullets"')
       ? features[0](dom)
-      :'<not found>',
+      :'<!not found>',
     description:
       html.includes('id="productDescription"')
       ? description[0](dom)
       : html.includes('class="feature"')
-      ? '<feature>'
-      : '<not found>',
+      ? description[1](dom)
+      : '<!not found>',
     information:
       html.includes('id="productDetails_detailBullets_sections1"')
       ? information[0](dom)
-      : '<not found>',
+      : html.includes('id="prodDetails"')
+      ? information[1](dom)
+      : '<!not found>',
     image:
       html.includes()
       ? image[0](dom)
-      : '<not found>'
+      : '<!not found>'
   })
 }
 
@@ -100,5 +125,6 @@ const getProduct = asin =>
   .map(R.prop('data'))
   .map(router)
   .map(R.assoc('link', link(asin)))
+  // .map(R.prop('information'))
 
 module.exports = getProduct

@@ -6,6 +6,18 @@
   version "9.4.7"
   resolved "http://registry.npmjs.org/@types/node/-/node-9.4.7.tgz#57d81cd98719df2c9de118f2d5f3b1120dcd7275"
 
+"amazon-product-scrapper@https://github.com/Alexis-De-La-Torre/amazon-product-scrapper.git#cheerio":
+  version "0.0.1"
+  resolved "https://github.com/Alexis-De-La-Torre/amazon-product-scrapper.git#1d1b1541b45e5a94e47f662f6fe384229f93f4bf"
+  dependencies:
+    axios "^0.18.0"
+    cheerio "^1.0.0-rc.2"
+    fluture "^8.0.2"
+    html-to-text "^4.0.0"
+    lodash.samplesize "^4.2.0"
+    prettyjson "^1.2.1"
+    ramda "^0.25.0"
+
 axios@^0.18.0:
   version "0.18.0"
   resolved "https://registry.yarnpkg.com/axios/-/axios-0.18.0.tgz#32d53e4851efdc0a11993b6cd000789d70c05102"
