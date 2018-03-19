@@ -1,4 +1,4 @@
-const { encaseP } = require('fluture')
+const { encaseP2 } = require('fluture')
 const { get } = require('axios')
 const R = require('ramda')
 const $ = require('cheerio')
