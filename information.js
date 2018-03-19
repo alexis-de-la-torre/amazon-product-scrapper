@@ -85,5 +85,4 @@ const getProduct = asin =>
   .map(R.prop('data'))
   .map(router)
 
-
 module.exports = getProduct
