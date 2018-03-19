@@ -1,3 +1,3 @@
 const product = require('./index.js')
 
-product('B0042SR4IW').fork(console.log, console.log)
+product('B000CBSNRY').fork(console.log, console.log)

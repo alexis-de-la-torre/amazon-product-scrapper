@@ -139,9 +139,10 @@ const router = html => {
     features:
       html.includes('id="feature-bullets"')
       ? features[0](dom)
-      : html.includes('id="bissProductSpecification_feature_div"')
-      ? features[1](dom)
-      :'<!not found>',
+      // : html.includes('id="bissProductSpecification_feature_div"')
+      // ? features[1](dom)
+      // B000CBSNRY
+      :[],
     description:
       html.includes('id="productDescription"')
       ? description[0](dom)
