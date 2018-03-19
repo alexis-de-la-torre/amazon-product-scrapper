@@ -30,6 +30,18 @@ const features = [
     R.map(dom => dom.text()),
     R.map(R.trim),
     R.reject(x => x.includes('Enter your model number'))
+  ),
+  // B0042SR4IW
+  R.pipe(
+    dom => dom('#bissProductSpecification_feature_div tr').toArray(),
+    R.map($),
+    R.map(dom => dom.html()),
+    // this could be a "fromTable" function
+    R.map(R.trim),
+    R.map(R.replace(/<th .*?>|<td.*?>|<\/td>/g, '')),
+    R.map(R.split('</th>')),
+    R.map(R.map(R.trim)),
+    R.fromPairs,
   )
 ]
 
@@ -42,7 +54,7 @@ const description = [
     R.replace(/<style type="text\/css">.*?<\/style>/gs, ''),
     R.replace(/<script type="text\/javascript">.*?<\/script>/gs, ''),
     R.replace(/<\/div>/g, ''),
-    getText,
+    html => getText(html, { wordwrap: null, ignoreImage: true }),
     R.trim,
   ),
   // B06ZYWGCZG
@@ -50,7 +62,7 @@ const description = [
     dom => dom('#aplus p').toArray().map($),
     R.map(dom => dom.html()),
     R.join('\n\n'),
-    getText,
+    html => getText(html, { wordwrap: null, ignoreImage: true }),
   )
 ]
 
@@ -64,6 +76,7 @@ const cleanInformation = R.pipe(
   R.dissoc('&#xA0;'),
   R.dissoc('Shipping Advisory'),
   R.dissoc('Shipping Information'),
+  R.dissoc('Amazon Best Sellers Rank'),
   R.evolve({ 'Shipping Weight': x => x.replace(/\(.*?\)/, '').trim() }),
 )
 
@@ -83,9 +96,22 @@ const information = [
   R.pipe(
     dom => dom('#prodDetails table > tbody > tr').toArray().map($),
     R.map(dom => dom.html()),
+    // this could be a "fromTable" function
     R.map(R.replace(/<td .*?>|<\/td>$/g, '')),
     R.map(R.split('</td>')),
     R.map(R.map(R.trim)),
+    R.fromPairs,
+    //
+    cleanInformation,
+  ),
+  // B0042SR4IW
+  R.pipe(
+    dom => dom('#detail-bullets .content > ul > li').toArray().map($),
+    R.map(dom => dom.html()),
+    R.map(R.replace('<b>', '')),
+    R.map(R.split('</b>')),
+    R.map(R.map(R.trim)),
+    R.map(R.map(R.replace(':', ''))),
     R.fromPairs,
     cleanInformation,
   )
@@ -113,6 +139,8 @@ const router = html => {
     features:
       html.includes('id="feature-bullets"')
       ? features[0](dom)
+      : html.includes('id="bissProductSpecification_feature_div"')
+      ? features[1](dom)
       :'<!not found>',
     description:
       html.includes('id="productDescription"')
@@ -125,6 +153,8 @@ const router = html => {
       ? information[0](dom)
       : html.includes('id="prodDetails"')
       ? information[1](dom)
+      : html.includes('id="detail-bullets"')
+      ? information[2](dom)
       : '<!not found>',
     image:
       html.includes()
@@ -138,6 +168,5 @@ const getProduct = asin =>
   .map(R.prop('data'))
   .map(router)
   .map(R.assoc('link', link(asin)))
-  // .map(R.prop('information'))
 
 module.exports = getProduct
