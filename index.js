@@ -1,10 +1,10 @@
 const { parallel } = require('fluture')
 
-const getInformation = require('./information')
-const getOffers = require('./offers')
+const information = require('./information')
+const offers = require('./offers')
 
-const getProduct = asin =>
+const product = asin =>
   parallel(1, [ getInformation(asin), getOffers(asin) ])
   .map(([ product, offers ]) => ({ ...product, offers }))
 
-module.exports = getProduct
+module.exports = { product, offers, information }
